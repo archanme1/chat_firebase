@@ -1,35 +1,49 @@
 import React from "react";
 import "./detail.css";
+import { useUserStore } from "../../lib/userStore";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../../lib/firebase";
+import { useChatStore } from "../../lib/chatStore";
+import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 
 const Detail = () => {
-  const user = null;
+  const {
+    chatId,
+    user,
+    isCurrentUserBlocked,
+    isReceiverBlocked,
+    changeBlock,
+    resetChat,
+  } = useChatStore();
+  const { currentUser } = useUserStore();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
+
+  const handleBlock = async () => {
+    if (!user) return;
+
+    const userRef = doc(db, "users", currentUser.id);
+
+    try {
+      await updateDoc(userRef, {
+        blocked: isReceiverBlocked ? arrayRemove(user.id) : arrayUnion(user.id),
+      });
+      changeBlock();
+    } catch (error) {
+      console.log(error);
+      toast("Cannot perform this action");
+    }
+  };
 
   return (
     <div className="detail">
       <div className="user">
         <img src={user?.avatar || "./avatar.png"} alt="" />
-        <h2>{user?.username}</h2>
-        <p>Lorem ipsum dolor sit amet.</p>
       </div>
       <div className="info">
-        <div className="option">
-          <div className="title">
-            <span>Chat Settings</span>
-            <img src="./arrowUp.png" alt="" />
-          </div>
-        </div>
-        <div className="option">
-          <div className="title">
-            <span>Chat Settings</span>
-            <img src="./arrowUp.png" alt="" />
-          </div>
-        </div>
-        <div className="option">
-          <div className="title">
-            <span>Privacy & help</span>
-            <img src="./arrowUp.png" alt="" />
-          </div>
-        </div>
         <div className="option">
           <div className="title">
             <span>Shared photos</span>
@@ -84,8 +98,16 @@ const Detail = () => {
             <img src="./arrowUp.png" alt="" />
           </div>
         </div>
-        <button>Block User</button>
-        <button className="logout">Logout</button>
+        <button onClick={handleBlock}>
+          {isCurrentUserBlocked
+            ? "You are Blocked!"
+            : isReceiverBlocked
+            ? "User blocked"
+            : "Block User"}
+        </button>
+        <button className="logout" onClick={handleLogout}>
+          Logout
+        </button>
       </div>
     </div>
   );

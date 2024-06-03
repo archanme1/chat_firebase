@@ -72,7 +72,11 @@
 
         .texts {
           p {
-            background-color: #5183fe;
+            color: green;
+          }
+
+          span {
+            color: green;
           }
         }
       }
